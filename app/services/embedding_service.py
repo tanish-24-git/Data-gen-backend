@@ -14,14 +14,15 @@ def create_embedding(text: str) -> list:
         if Config.MODEL_PROVIDER == "openai":
             response = openai_client.embeddings.create(
                 model="text-embedding-3-large",
-                input=text
+                input=text,
+                dimensions=1024
             )
             embedding = response.data[0].embedding
         elif Config.MODEL_PROVIDER == "gemini":
             result = genai.embed_content(
                 model="models/text-embedding-004",
                 content=text,
-                output_dimensionality=3072  # Match Pinecone dimension
+                output_dimensionality=768 # Match Pinecone dimension
             )
             embedding = result['embedding']
         logger.info("Embedding created successfully.")
