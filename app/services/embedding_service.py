@@ -2,6 +2,7 @@ import os
 from app.utils.config import Config
 from app.utils.logger import logger
 
+
 if Config.MODEL_PROVIDER == "openai":
     from openai import OpenAI
     openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
