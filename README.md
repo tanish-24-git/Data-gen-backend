@@ -2,30 +2,30 @@
 synthetic-dataset-platform/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py                  # Entry point for FastAPI app
+│   ├── main.py
 │   ├── api/
 │   │   ├── __init__.py
-│   │   └── routes.py            # API endpoints/routers
+│   │   └── routes.py
 │   ├── services/
 │   │   ├── __init__.py
-│   │   ├── schema_extractor.py  # Extracts schema from CSV or prompt
-│   │   ├── embedding_service.py # Handles embeddings with OpenAI/HuggingFace
-│   │   ├── pinecone_service.py  # Interacts with Pinecone
-│   │   ├── llm_generator.py     # Uses LLM to generate synthetic data
-│   │   └── privacy_handler.py   # Handles PII removal and compliance
+│   │   ├── schema_extractor.py
+│   │   ├── embedding_service.py  # Updated for Gemini
+│   │   ├── pinecone_service.py
+│   │   ├── llm_generator.py     # Updated for Gemini
+│   │   └── privacy_handler.py
 │   ├── utils/
 │   │   ├── __init__.py
-│   │   ├── logger.py            # Centralized logging setup
-│   │   ├── config.py            # Loads .env configs
-│   │   └── helpers.py           # Misc helpers (e.g., CSV parsing, file handling)
+│   │   ├── logger.py
+│   │   ├── config.py            # Updated with MODEL_PROVIDER and GEMINI_API_KEY
+│   │   └── helpers.py
 │   └── models/
 │       ├── __init__.py
-│       └── schemas.py           # Pydantic models for API requests/responses
+│       └── schemas.py
 ├── tests/
 │   ├── __init__.py
-│   └── test_services.py         # Unit tests (stubbed)
-├── .env                         # Environment variables (git ignore this)
-├── .gitignore                   # Standard gitignore
-├── requirements.txt             # Dependencies
-├── setup.py                     # For packaging the app
-└── README.md                    # Project docs
+│   └── test_services.py
+├── .env                         # Updated
+├── .gitignore
+├── requirements.txt             # Updated
+├── setup.py
+└── README.md                    # Updated
