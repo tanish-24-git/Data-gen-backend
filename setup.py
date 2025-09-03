@@ -10,7 +10,7 @@ setup(
         'pydantic',
         'pandas',
         'openai',
-        'pinecone-client',
+        'pinecone',
         'python-dotenv',
         'python-multipart',
     ],
