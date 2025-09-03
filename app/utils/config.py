@@ -1,0 +1,26 @@
+from dotenv import load_dotenv
+import os
+
+class Config:
+    OPENAI_API_KEY = None
+    GEMINI_API_KEY = None  # New
+    PINECONE_API_KEY = None
+    PINECONE_ENVIRONMENT = None
+    PINECONE_INDEX_NAME = None
+    MODEL_PROVIDER = "openai"  # Default
+    FINE_TUNED_MODEL = None
+
+def load_config():
+    load_dotenv()
+    Config.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    Config.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    Config.PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+    Config.PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
+    Config.PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
+    Config.MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "openai").lower()
+    Config.FINE_TUNED_MODEL = os.getenv("FINE_TUNED_MODEL")
+    
+    if Config.MODEL_PROVIDER == "gemini" and not Config.GEMINI_API_KEY:
+        raise ValueError("Missing GEMINI_API_KEY in .env for Gemini provider")
+    if Config.MODEL_PROVIDER == "openai" and not Config.OPENAI_API_KEY:
+        raise ValueError("Missing OPENAI_API_KEY in .env for OpenAI provider")
