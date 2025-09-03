@@ -1,8 +1,0 @@
-# Project dependencies
-fastapi
-uvicorn
-google-generativeai
-faker
-pydantic
-python-dotenv
-pandas
