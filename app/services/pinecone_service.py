@@ -1,9 +1,10 @@
-import pinecone
+from pinecone import Pinecone
 from app.utils.config import Config
 from app.utils.logger import logger
 
-pinecone.init(api_key=Config.PINECONE_API_KEY, environment=Config.PINECONE_ENVIRONMENT)
-index = pinecone.Index(Config.PINECONE_INDEX_NAME)
+# Initialize Pinecone client
+pc = Pinecone(api_key=Config.PINECONE_API_KEY)
+index = pc.Index(Config.PINECONE_INDEX_NAME)
 
 def upsert_to_pinecone(id: str, embedding: list, metadata: dict):
     try:

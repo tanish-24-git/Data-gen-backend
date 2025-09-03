@@ -1,12 +1,13 @@
+from app.utils.config import load_config
+from app.utils.logger import setup_logger
+
+load_config()  # Load .env first
+setup_logger()  # Setup logging
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware  # Added for CORS
 from app.api.routes import router
-from app.utils.logger import setup_logger
-from app.utils.config import load_config
-
-load_config()  # Load .env
-setup_logger()  # Setup logging
 
 app = FastAPI(title="Synthetic Dataset Generator")
 
