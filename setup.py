@@ -1,4 +1,3 @@
-# setup.py (Updated File)
 # Standard setup script for packaging the application
 from setuptools import setup, find_packages
 
@@ -18,7 +17,6 @@ setup(
         'python-multipart',
         'faker',
         'slowapi',
-        'redis',
         'email-validator',
         'bleach',
     ],

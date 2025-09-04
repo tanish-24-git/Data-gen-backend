@@ -1,9 +1,8 @@
-# app/main.py (Updated File)
 # Main entry point for the FastAPI application
-# Handles lifespan events for async resources (e.g., Pinecone, Redis)
+# Handles lifespan events for async resources (e.g., Pinecone)
 
 from contextlib import asynccontextmanager
-from app.utils.config import load_config, Config  # <-- FIX: Import Config
+from app.utils.config import load_config, Config
 from app.utils.logger import setup_logger
 
 # Load environment variables and configure logging
@@ -18,17 +17,15 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.api.routes import router
 
 # Import async clients
-from pinecone import Pinecone  # <-- FIX: Correct Pinecone import
-from redis.asyncio import Redis
+from pinecone import Pinecone
 
-from app.utils.limiter import limiter  # <-- ADD THIS
+from app.utils.limiter import limiter
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Lifespan context manager for startup/shutdown events.
-    - Initializes async clients for Pinecone and Redis on startup.
-    - Closes them on shutdown to prevent resource leaks.
+    - Initializes async clients for Pinecone on startup.
     """
     # Startup: Configure Gemini if used
     if Config.MODEL_PROVIDER.lower() == "gemini":
@@ -39,15 +36,7 @@ async def lifespan(app: FastAPI):
     app.state.pc = Pinecone(api_key=Config.PINECONE_API_KEY)
     app.state.index = app.state.pc.Index(Config.PINECONE_INDEX_NAME)
 
-    # Initialize async Redis client
-    app.state.redis = await Redis.from_url(Config.REDIS_URL, decode_responses=True)
-
     yield  # Yield control to the app
-
-    # Shutdown: Close connections
-    await app.state.redis.aclose()
-    app.state.pc.close()
-
 
 # Create FastAPI app with lifespan
 app = FastAPI(title="Synthetic Dataset Generator", lifespan=lifespan)

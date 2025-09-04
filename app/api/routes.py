@@ -1,6 +1,5 @@
-# app/api/routes.py (Updated File)
 # API routes for the application
-# Handles the /generate-dataset endpoint with streaming, caching, async calls
+# Handles the /generate-dataset endpoint with streaming, async calls
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from app.services.schema_extractor import extract_schema
@@ -11,16 +10,15 @@ from app.models.schemas import GenerationRequest  # For Pydantic validation
 from app.utils.logger import logger
 import bleach  # For input sanitization
 import hashlib  # For cache key hashing
-from typing import AsyncGenerator
-import json  # <-- ADD THIS
-from typing import Optional
+from typing import AsyncGenerator, Optional
+import json
 
-from app.utils.limiter import limiter  # <-- ADD THIS
+from app.utils.limiter import limiter
 
 router = APIRouter()
 
 @router.post("/generate-dataset")
-@limiter.limit("20/minute;5/10second")  # <-- CHANGE TO THIS
+@limiter.limit("20/minute;5/10second")
 async def generate_dataset(
     request: Request,
     prompt: str = Form(None),
@@ -32,7 +30,6 @@ async def generate_dataset(
     Endpoint to generate synthetic dataset.
     - Validates inputs with Pydantic.
     - Sanitizes prompt.
-    - Checks cache for small requests.
     - Streams data in batches without storage.
     - Uses async for external calls.
     """
@@ -57,7 +54,7 @@ async def generate_dataset(
         else:
             schema, description = extract_schema(prompt, is_file=False)
 
-        # Create embedding async
+          # Create embedding async
         schema_text = f"{schema} - {description}"
         embedding = await create_embedding(schema_text, task_type="RETRIEVAL_DOCUMENT")
 
@@ -68,7 +65,7 @@ async def generate_dataset(
             "description": description,
             "privacy": "public"
         }
-        dataset_id = f"dataset_{hashlib.sha256(schema_text.encode()).hexdigest()}"  # <-- CHANGE TO THIS
+        dataset_id = f"dataset_{hashlib.sha256(schema_text.encode()).hexdigest()}"
 
         # Async upsert to Pinecone
         await upsert_to_pinecone(request.app.state.index, dataset_id, embedding, metadata)
@@ -78,29 +75,12 @@ async def generate_dataset(
         similar_results = await query_pinecone(request.app.state.index, query_embedding, top_k=3)
         context = "\n".join([res['metadata'].get('description', '') for res in similar_results.get('matches', [])])
 
-        # Cache key based on request params
-        cache_key = hashlib.sha256(f"{schema}{description}{num_rows}{format}{context}".encode()).hexdigest()
-
-        # Check Redis cache if small request (<=10k rows)
-        if num_rows <= 10000:
-            cached_data = await request.app.state.redis.get(cache_key)
-            if cached_data:
-                logger.info("Serving from cache")
-                async def cache_stream() -> AsyncGenerator[str, None]:
-                    for line in cached_data.splitlines(keepends=True):
-                        yield line
-                media_type = 'text/csv' if format == 'csv' else 'application/ndjson'
-                return StreamingResponse(cache_stream(), media_type=media_type, headers={"Content-Disposition": f"attachment; filename=dataset.{format}"})
-
         # Stream generator: hybrid generation with batching, validation, anonymization
         async def data_stream() -> AsyncGenerator[str, None]:
             columns_list = schema.split(", ")
-            buffer = [] if num_rows <= 10000 else None
             if format == 'csv':
                 header = ','.join(columns_list) + '\n'  # TODO: Add quoting if needed
                 yield header
-                if buffer is not None:
-                    buffer.append(header)
 
             # Get stream from hybrid generator
             async for batch in hybrid_generate_synthetic_data_stream(num_rows, columns_list, metadata['domain'], context, format):
@@ -116,13 +96,6 @@ async def generate_dataset(
                     else:  # NDJSON for json
                         line = json.dumps(row) + '\n'
                     yield line
-                    if buffer is not None:
-                        buffer.append(line)
-
-            # Cache full response if small
-            if buffer is not None:
-                full_data = ''.join(buffer)
-                await request.app.state.redis.set(cache_key, full_data, ex=3600)  # Cache for 1 hour
 
         media_type = 'text/csv' if format == 'csv' else 'application/ndjson'
         return StreamingResponse(data_stream(), media_type=media_type, headers={"Content-Disposition": f"attachment; filename=dataset.{format}"})

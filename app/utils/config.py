@@ -6,7 +6,6 @@ class Config:
     """
     Config class to hold environment variables.
     - Defaults MODEL_PROVIDER to 'gemini'.
-    - Adds REDIS_URL for caching.
     """
     OPENAI_API_KEY = None
     GEMINI_API_KEY = None
@@ -15,7 +14,6 @@ class Config:
     PINECONE_INDEX_NAME = None
     MODEL_PROVIDER = "gemini"  # Preferred as per requirements
     FINE_TUNED_MODEL = None
-    REDIS_URL = None  # For caching
 
 def load_config():
     """
@@ -31,7 +29,6 @@ def load_config():
     Config.PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
     Config.MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "gemini").lower()
     Config.FINE_TUNED_MODEL = os.getenv("FINE_TUNED_MODEL")
-    Config.REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")  # Default local
     
     # Validation
     if Config.MODEL_PROVIDER == "gemini" and not Config.GEMINI_API_KEY:
