@@ -1,22 +1,27 @@
-from pinecone import Pinecone
-from app.utils.config import Config
+# Async service for Pinecone operations
+# Only stores metadata and embeddings, no raw data
 from app.utils.logger import logger
+from pinecone.grpc import IndexGRPC  # Assuming app.state.index is GRPC index
 
-# Initialize Pinecone client
-pc = Pinecone(api_key=Config.PINECONE_API_KEY)
-index = pc.Index(Config.PINECONE_INDEX_NAME)
-
-def upsert_to_pinecone(id: str, embedding: list, metadata: dict):
+async def upsert_to_pinecone(index: IndexGRPC, id: str, embedding: list[float], metadata: dict):
+    """
+    Async upsert to Pinecone.
+    - Stores dataset_id, columns, description, privacy, domain.
+    """
     try:
-        index.upsert(vectors=[(id, embedding, metadata)])
+        await index.upsert(vectors=[(id, embedding, metadata)])
         logger.info(f"Upserted to Pinecone: {id}")
     except Exception as e:
         logger.error(f"Pinecone upsert error: {str(e)}")
         raise
 
-def query_pinecone(embedding: list, top_k: int = 5) -> dict:
+async def query_pinecone(index: IndexGRPC, embedding: list[float], top_k: int = 5) -> dict:
+    """
+    Async query for similar embeddings.
+    - Returns top_k results with metadata for context.
+    """
     try:
-        results = index.query(vector=embedding, top_k=top_k, include_metadata=True)
+        results = await index.query(vector=embedding, top_k=top_k, include_metadata=True)
         logger.info("Pinecone query successful.")
         return results
     except Exception as e:
