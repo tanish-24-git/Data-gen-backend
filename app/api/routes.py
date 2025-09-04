@@ -13,6 +13,7 @@ import bleach  # For input sanitization
 import hashlib  # For cache key hashing
 from typing import AsyncGenerator
 import json  # <-- ADD THIS
+from typing import Optional
 
 from app.utils.limiter import limiter  # <-- ADD THIS
 
@@ -23,7 +24,7 @@ router = APIRouter()
 async def generate_dataset(
     request: Request,
     prompt: str = Form(None),
-    file: UploadFile = File(None),
+    file: Optional[UploadFile] = File(None),
     num_rows: int = Form(1000),
     format: str = Form("csv")  # csv or json (streams as NDJSON)
 ) -> StreamingResponse:
