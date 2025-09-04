@@ -40,21 +40,33 @@ async def generate_dataset(
         if not prompt and not file:
             raise HTTPException(status_code=400, detail="Provide either prompt or file.")
 
+        # Log inputs for debugging
+        logger.info(f"Received prompt: {prompt}")
+        logger.info(f"Num rows: {num_rows}, Format: {format}, File: {file.filename if file else 'None'}")
+
         # Sanitize prompt if provided
         if prompt:
             prompt = bleach.clean(prompt)  # Prevent injection
+            logger.info(f"Sanitized prompt: {prompt}")
             if len(prompt) > 2000:
                 raise HTTPException(status_code=400, detail="Prompt too long (max 2000 characters).")
 
         # Extract schema and description
-        if file:
-            content = await file.read()
-            content = content.decode('utf-8')
-            schema, description = extract_schema(content, is_file=True)
-        else:
-            schema, description = extract_schema(prompt, is_file=False)
+        try:
+            if file:
+                content = await file.read()
+                content = content.decode('utf-8')
+                logger.info(f"File content: {content[:500]}...")  # Log first 500 chars for brevity
+                schema, description = extract_schema(content, is_file=True)
+            else:
+                schema, description = extract_schema(prompt, is_file=False)
+            logger.info(f"Extracted schema: {schema}, Description: {description}")
+        except Exception as schema_error:
+            logger.error(f"Schema extraction error: {str(schema_error)}")
+            logger.error(f"Input causing error: {prompt if prompt else content}")
+            raise HTTPException(status_code=400, detail=f"Invalid prompt format: {str(schema_error)}")
 
-          # Create embedding async
+        # Create embedding async
         schema_text = f"{schema} - {description}"
         embedding = await create_embedding(schema_text, task_type="RETRIEVAL_DOCUMENT")
 
@@ -100,6 +112,9 @@ async def generate_dataset(
         media_type = 'text/csv' if format == 'csv' else 'application/ndjson'
         return StreamingResponse(data_stream(), media_type=media_type, headers={"Content-Disposition": f"attachment; filename=dataset.{format}"})
 
+    except HTTPException as e:
+        logger.error(f"HTTP error: {str(e)}")
+        raise e
     except Exception as e:
         logger.error(f"Error generating dataset: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error generating dataset: {str(e)}")
