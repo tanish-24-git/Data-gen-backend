@@ -1,6 +1,6 @@
 # Main entry point for the FastAPI application
 # Handles lifespan events for async resources (e.g., Pinecone)
-
+import os
 from contextlib import asynccontextmanager
 from app.utils.config import load_config, Config
 from app.utils.logger import setup_logger
@@ -48,7 +48,7 @@ app.add_middleware(SlowAPIMiddleware)
 # Add CORS middleware for frontend (e.g., Vercel-hosted)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "*"],  # Restrict in production
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(","),  # Restrict in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
