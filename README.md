@@ -1,31 +1,28 @@
 ```
 synthetic-dataset-platform/
+├── README.md
+├── requirements.txt
+├── setup.py
 ├── app/
-│   ├── __init__.py
+│   ├── __init__.py  (empty)
 │   ├── main.py
 │   ├── api/
-│   │   ├── __init__.py
+│   │   ├── __init__.py  (empty)
 │   │   └── routes.py
+│   ├── models/
+│   │   ├── __init__.py  (empty)
+│   │   └── schemas.py
 │   ├── services/
-│   │   ├── __init__.py
-│   │   ├── schema_extractor.py
-│   │   ├── embedding_service.py  # Updated for Gemini
+│   │   ├── __init__.py  (empty)
+│   │   ├── embedding_service.py
+│   │   ├── llm_generator.py
 │   │   ├── pinecone_service.py
-│   │   ├── llm_generator.py     # Updated for Gemini
-│   │   └── privacy_handler.py
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   ├── logger.py
-│   │   ├── config.py            # Updated with MODEL_PROVIDER and GEMINI_API_KEY
-│   │   └── helpers.py
-│   └── models/
-│       ├── __init__.py
-│       └── schemas.py
-├── tests/
-│   ├── __init__.py
-│   └── test_services.py
-├── .env                         # Updated
-├── .gitignore
-├── requirements.txt             # Updated
-├── setup.py
-└── README.md                    # Updated
+│   │   └── schema_extractor.py
+│   └── utils/
+│       ├── __init__.py  (empty)
+│       ├── config.py
+│       └── logger.py
+└── tests/
+    └── test_services.py
+
+```
