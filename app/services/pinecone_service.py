@@ -1,9 +1,9 @@
 # Async service for Pinecone operations
 # Only stores metadata and embeddings, no raw data
 from app.utils.logger import logger
-from pinecone.grpc import IndexGRPC  # Assuming app.state.index is GRPC index
+from pinecone import Pinecone # Assuming app.state.index is GRPC index
 
-async def upsert_to_pinecone(index: IndexGRPC, id: str, embedding: list[float], metadata: dict):
+async def upsert_to_pinecone(index, id: str, embedding: list[float], metadata: dict):
     """
     Async upsert to Pinecone.
     - Stores dataset_id, columns, description, privacy, domain.
@@ -15,7 +15,7 @@ async def upsert_to_pinecone(index: IndexGRPC, id: str, embedding: list[float], 
         logger.error(f"Pinecone upsert error: {str(e)}")
         raise
 
-async def query_pinecone(index: IndexGRPC, embedding: list[float], top_k: int = 5) -> dict:
+async def query_pinecone(index, embedding: list[float], top_k: int = 5) -> dict:
     """
     Async query for similar embeddings.
     - Returns top_k results with metadata for context.

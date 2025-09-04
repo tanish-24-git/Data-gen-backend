@@ -1,11 +1,13 @@
 # Main entry point for the FastAPI application
 # Handles lifespan events for async resources (e.g., Pinecone, Redis)
+
 from contextlib import asynccontextmanager
-from app.utils.config import load_config
+from app.utils.config import load_config, Config  # <-- FIX: Import Config
 from app.utils.logger import setup_logger
 
-load_config()  # Load environment variables from .env
-setup_logger()  # Initialize logging
+# Load environment variables and configure logging
+load_config()
+setup_logger()
 
 # Import FastAPI and middleware
 from fastapi import FastAPI
@@ -13,11 +15,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
+
 from app.api.routes import router
 
 # Import async clients
-from pinecone.grpc import PineconeGRPC as PineconeAsyncio  # For async Pinecone
+from pinecone import Pinecone  # <-- FIX: Correct Pinecone import
 import aioredis
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,22 +31,23 @@ async def lifespan(app: FastAPI):
     - Closes them on shutdown to prevent resource leaks.
     """
     # Startup: Configure Gemini if used
-    if Config.MODEL_PROVIDER == "gemini":
+    if Config.MODEL_PROVIDER.lower() == "gemini":
         import google.generativeai as genai
         genai.configure(api_key=Config.GEMINI_API_KEY)
-    
-    # Initialize async Pinecone client
-    app.state.pc = PineconeAsyncio(api_key=Config.PINECONE_API_KEY)
+
+    # Initialize Pinecone client
+    app.state.pc = Pinecone(api_key=Config.PINECONE_API_KEY)
     app.state.index = app.state.pc.Index(Config.PINECONE_INDEX_NAME)
-    
+
     # Initialize async Redis client
     app.state.redis = aioredis.from_url(Config.REDIS_URL, decode_responses=True)
-    
+
     yield  # Yield control to the app
-    
+
     # Shutdown: Close connections
     await app.state.redis.close()
     app.state.pc.close()
+
 
 # Create FastAPI app with lifespan
 app = FastAPI(title="Synthetic Dataset Generator", lifespan=lifespan)
