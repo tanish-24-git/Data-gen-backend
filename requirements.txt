@@ -1,9 +1,32 @@
+# Core framework and server
 fastapi==0.116.1
 uvicorn==0.35.0
+
+# Data validation and processing
 pydantic==2.11.0
 pandas==2.3.2
+
+# AI and embeddings
 openai==1.104.1
 google-generativeai==0.8.5
-pinecone==7.0.0
+
+# Vector database (with async support)
+pinecone-client[asyncio]==5.0.1  # Updated for async support
+
+# Utilities
 python-dotenv==1.0.1
 python-multipart==0.0.9
+
+# Data generation
+faker==28.4.1
+
+# Security and performance
+slowapi==0.1.9  # For rate limiting
+redis==5.1.1    # For caching
+aioredis==2.0.1 # Async Redis
+
+# Validation helpers
+email-validator==2.2.0
+
+# Sanitization
+bleach==6.1.0
