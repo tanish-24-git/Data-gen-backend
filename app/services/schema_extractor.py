@@ -1,11 +1,12 @@
+# Service to extract schema from file or prompt
 import pandas as pd
 from io import StringIO
 from app.utils.logger import logger
 
-def extract_schema(input_data: str, is_file: bool = True) -> tuple:
+def extract_schema(input_data: str, is_file: bool = True) -> tuple[str, str]:
     """
-    Extracts schema and description from CSV or prompt.
-    Returns (schema_str, description)
+    Extracts schema (columns) and description.
+    - From CSV file content or prompt string.
     """
     try:
         if is_file:
@@ -14,7 +15,7 @@ def extract_schema(input_data: str, is_file: bool = True) -> tuple:
             schema = ", ".join(columns)
             description = "Sample dataset with columns: " + schema
         else:
-            # Parse prompt, e.g., extract columns from "Generate ... with Name, Age, ..."
+            # Parse prompt like "Generate ... with Name, Age, ..."
             parts = input_data.lower().split("with")
             if len(parts) > 1:
                 columns = [col.strip() for col in parts[1].split(",")]
