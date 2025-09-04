@@ -1,3 +1,4 @@
+# app/main.py (Updated File)
 # Main entry point for the FastAPI application
 # Handles lifespan events for async resources (e.g., Pinecone, Redis)
 
@@ -12,16 +13,15 @@ setup_logger()
 # Import FastAPI and middleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.routes import router
 
 # Import async clients
 from pinecone import Pinecone  # <-- FIX: Correct Pinecone import
-import aioredis
+from redis.asyncio import Redis
 
+from app.utils.limiter import limiter  # <-- ADD THIS
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,12 +40,12 @@ async def lifespan(app: FastAPI):
     app.state.index = app.state.pc.Index(Config.PINECONE_INDEX_NAME)
 
     # Initialize async Redis client
-    app.state.redis = aioredis.from_url(Config.REDIS_URL, decode_responses=True)
+    app.state.redis = await Redis.from_url(Config.REDIS_URL, decode_responses=True)
 
     yield  # Yield control to the app
 
     # Shutdown: Close connections
-    await app.state.redis.close()
+    await app.state.redis.aclose()
     app.state.pc.close()
 
 
@@ -53,7 +53,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Synthetic Dataset Generator", lifespan=lifespan)
 
 # Set up rate limiter (20 req/min, burst 5/10s per IP)
-limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 

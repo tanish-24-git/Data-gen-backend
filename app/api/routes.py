@@ -1,3 +1,4 @@
+# app/api/routes.py (Updated File)
 # API routes for the application
 # Handles the /generate-dataset endpoint with streaming, caching, async calls
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
@@ -11,11 +12,14 @@ from app.utils.logger import logger
 import bleach  # For input sanitization
 import hashlib  # For cache key hashing
 from typing import AsyncGenerator
+import json  # <-- ADD THIS
+
+from app.utils.limiter import limiter  # <-- ADD THIS
 
 router = APIRouter()
 
 @router.post("/generate-dataset")
-@router.app.state.limiter.limit("20/minute;5/10second")  # Apply rate limiting
+@limiter.limit("20/minute;5/10second")  # <-- CHANGE TO THIS
 async def generate_dataset(
     request: Request,
     prompt: str = Form(None),
@@ -63,7 +67,7 @@ async def generate_dataset(
             "description": description,
             "privacy": "public"
         }
-        dataset_id = f"dataset_{hash(schema_text)}"  # Unique ID
+        dataset_id = f"dataset_{hashlib.sha256(schema_text.encode()).hexdigest()}"  # <-- CHANGE TO THIS
 
         # Async upsert to Pinecone
         await upsert_to_pinecone(request.app.state.index, dataset_id, embedding, metadata)
@@ -81,7 +85,7 @@ async def generate_dataset(
             cached_data = await request.app.state.redis.get(cache_key)
             if cached_data:
                 logger.info("Serving from cache")
-                def cache_stream() -> AsyncGenerator[str, None]:
+                async def cache_stream() -> AsyncGenerator[str, None]:
                     for line in cached_data.splitlines(keepends=True):
                         yield line
                 media_type = 'text/csv' if format == 'csv' else 'application/ndjson'
@@ -90,29 +94,34 @@ async def generate_dataset(
         # Stream generator: hybrid generation with batching, validation, anonymization
         async def data_stream() -> AsyncGenerator[str, None]:
             columns_list = schema.split(", ")
+            buffer = [] if num_rows <= 10000 else None
             if format == 'csv':
-                yield ','.join(columns_list) + '\n'  # Header for CSV
+                header = ','.join(columns_list) + '\n'  # TODO: Add quoting if needed
+                yield header
+                if buffer is not None:
+                    buffer.append(header)
 
             # Get stream from hybrid generator
             async for batch in hybrid_generate_synthetic_data_stream(num_rows, columns_list, metadata['domain'], context, format):
                 # Batch is list of dicts (rows)
                 # Anonymize and validate each row
-                for row in batch:
-                    row = anonymize_data(row)  # Anonymize dict
-                    # Validation is already in generator, but can add more here if needed
+                for i in range(len(batch)):
+                    batch[i] = anonymize_data(batch[i])  # Fix: Modify in place
 
                 # Format and yield lines
                 for row in batch:
                     if format == 'csv':
-                        line = ','.join([str(row[col]) for col in columns_list])  # Handle quoting if needed
+                        line = ','.join(str(row.get(col, '')) for col in columns_list) + '\n'  # Handle missing; TODO: quoting
                     else:  # NDJSON for json
-                        line = json.dumps(row)
-                    yield line + '\n'
+                        line = json.dumps(row) + '\n'
+                    yield line
+                    if buffer is not None:
+                        buffer.append(line)
 
-            # Cache full response if small (collect in memory for caching)
-            if num_rows <= 10000:
-                # Note: For caching streaming, we'd need to collect, but skip for large; implement buffer if needed
-                pass
+            # Cache full response if small
+            if buffer is not None:
+                full_data = ''.join(buffer)
+                await request.app.state.redis.set(cache_key, full_data, ex=3600)  # Cache for 1 hour
 
         media_type = 'text/csv' if format == 'csv' else 'application/ndjson'
         return StreamingResponse(data_stream(), media_type=media_type, headers={"Content-Disposition": f"attachment; filename=dataset.{format}"})
