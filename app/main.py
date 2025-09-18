@@ -43,7 +43,7 @@ app.add_middleware(SlowAPIMiddleware)
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://data-gen-frontend-git-main-tanish-24-gits-projects.vercel.app").split(","),
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://data-gen-frontend-git-main-tanish-24-gits-projects.vercel.app","https://data-gen-frontend.vercel.app").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
